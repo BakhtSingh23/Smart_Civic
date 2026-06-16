@@ -44,3 +44,14 @@ This starts both the backend (port 5000) and frontend (port 5173).
 ### 5. Admin login
 
 Navigate to `http://localhost:5173/login` and use the `ADMIN_EMAIL` and `ADMIN_PASSWORD` values from your `.env` file. The admin account is auto-created on first server startup.
+
+## Deploying to Render
+
+This repository includes a `render.yaml` blueprint that deploys the backend from `server/`.
+
+Use Render's Blueprint deploy flow, or configure a manual Web Service with:
+- Root directory: `server`
+- Build command: `npm install`
+- Start command: `npm start`
+
+Make sure the Render service has the same environment variables as your local `server/.env` file, especially `MONGO_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`.
