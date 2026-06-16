@@ -41,7 +41,7 @@ app.use(express.json({ limit: '10mb' }));
 
 const configuredOrigins = (process.env.CLIENT_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5173')
 	.split(',')
-	.map((origin) => origin.trim())
+	.map((origin) => origin.trim().replace(/\/$/, ''))
 	.filter(Boolean);
 
 const localhostOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
@@ -51,7 +51,9 @@ app.use(
 		origin: (origin, callback) => {
 			if (!origin) return callback(null, true);
 
-			const allowedByConfig = configuredOrigins.includes(origin);
+			const normalizedOrigin = origin.replace(/\/$/, '');
+
+			const allowedByConfig = configuredOrigins.includes(normalizedOrigin);
 			const allowedLocalhost = localhostOriginRegex.test(origin);
 
 			if (allowedByConfig || allowedLocalhost) {
