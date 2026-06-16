@@ -1,0 +1,478 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - report_complaint
+  - check_complaint_status
+  - report_road_issue
+  - report_water_issue
+  - report_sanitation_issue
+  - report_electricity_issue
+  - report_drainage_issue
+  - ask_emergency_contacts
+  - ask_how_it_works
+  - ask_resolution_time
+  - ask_departments
+  - ask_track_complaint
+  - thank_you
+  - start_complaint_form
+  - provide_issue_description
+  - provide_location
+  - provide_city
+  - provide_priority
+  - confirm_submission
+  - cancel_complaint
+entities:
+  - complaint_id
+  - location
+  - category
+  - priority_level
+  - city_name
+
+slots:
+  complaint_id:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: complaint_id
+
+  detected_category:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: category
+
+  complaint_status_result:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  issue_description:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_text
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: issue_description
+
+  issue_category:
+    type: categorical
+    values:
+      - Roads
+      - Water
+      - Sanitation
+      - Electricity
+      - Drainage
+      - Other
+    influence_conversation: true
+    mappings:
+      - type: custom
+        action: action_detect_and_set_category
+
+  category_confirmed:
+    type: bool
+    influence_conversation: true
+    mappings:
+      - type: from_intent
+        intent: affirm
+        value: true
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: category_confirmed
+      - type: from_intent
+        intent: deny
+        value: false
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: category_confirmed
+
+  issue_location_text:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_text
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: issue_location_text
+
+  issue_city:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_text
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: issue_city
+
+  issue_priority:
+    type: categorical
+    values:
+      - low
+      - medium
+      - high
+      - urgent
+    influence_conversation: true
+    mappings:
+      - type: from_text
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: issue_priority
+
+  submission_confirmed:
+    type: bool
+    influence_conversation: true
+    mappings:
+      - type: from_intent
+        intent: affirm
+        value: true
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: submission_confirmed
+      - type: from_intent
+        intent: deny
+        value: false
+        conditions:
+          - active_loop: complaint_form
+            requested_slot: submission_confirmed
+
+  submitted_complaint_id:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+forms:
+  complaint_form:
+    required_slots:
+      - issue_description
+      - issue_category
+      - category_confirmed
+      - issue_location_text
+      - issue_city
+      - issue_priority
+      - submission_confirmed
+
+responses:
+
+  utter_greet:
+    - text: |
+        👋 Hello! I'm the SmartCivic Assistant.
+        I can help you:
+        • 📋 File a new complaint
+        • 📍 Check your complaint status
+        • 🏢 Find the right department
+        • 📞 Get emergency contacts
+        • ❓ Understand how it works
+
+        What would you like help with today?
+
+  utter_goodbye:
+    - text: "Thank you for using SmartCivic! Your civic reports help make the city better. 🏙️ Goodbye!"
+
+  utter_thank_you:
+    - text: "You're welcome! 😊 Is there anything else I can help you with?"
+
+  utter_how_to_report:
+    - text: |
+        📋 Here's how to file a complaint on SmartCivic:
+
+        **Step 1** — Click "Report Issue" in the sidebar
+        **Step 2** — Enter your complaint title and description
+        **Step 3** — Select the category (Roads, Water, Sanitation, etc.)
+        **Step 4** — Allow GPS or enter your location manually
+        **Step 5** — Upload photo/video evidence (optional but recommended)
+        **Step 6** — Review and submit
+
+        ✅ You'll receive a Complaint ID (e.g., CMP-2024-0042) and an email confirmation.
+
+        Want me to guide you to the submission page?
+
+  utter_ask_which_category:
+    - text: |
+        I can help identify the right category! Please describe the issue you're facing.
+
+        Common categories:
+        🛣️ Roads — potholes, road damage, broken pavements
+        💧 Water — leakage, no supply, pipe burst
+        🗑️ Sanitation — garbage, waste collection
+        ⚡ Electricity — streetlights, wires, power issues
+        🌊 Drainage — blocked drains, waterlogging, manholes
+
+  utter_road_issue_detected:
+    - text: |
+        🛣️ This sounds like a **Roads Department** issue.
+
+        Suggested details for your complaint:
+        • **Category:** Roads
+        • **Department:** Roads & Infrastructure
+        • **Priority:** High (if causing accidents)
+
+        👉 Click "Report Issue" → Select category "Roads" → Describe the exact location.
+
+        Tip: Upload a clear photo — it speeds up verification significantly!
+
+  utter_water_issue_detected:
+    - text: |
+        💧 This sounds like a **Water Supply Department** issue.
+
+        Suggested details:
+        • **Category:** Water
+        • **Department:** Water Supply & Sewerage
+        • **Priority:** High (pipe bursts) / Medium (quality issues)
+
+        👉 Go to "Report Issue" → Select "Water" → Add GPS location for fastest response.
+
+        If it's a burst pipe causing flooding, mark priority as **Urgent**!
+
+  utter_sanitation_issue_detected:
+    - text: |
+        🗑️ This sounds like a **Sanitation Department** issue.
+
+        Suggested details:
+        • **Category:** Sanitation
+        • **Department:** Solid Waste Management
+        • **Priority:** Medium (missed collection) / High (health hazard)
+
+        👉 Go to "Report Issue" → Select "Sanitation" → Pin the exact location on the map.
+
+  utter_electricity_issue_detected:
+    - text: |
+        ⚡ This sounds like an **Electricity Department** issue.
+
+        Suggested details:
+        • **Category:** Electricity
+        • **Department:** Electrical & Streetlighting
+
+        ⚠️ If there is a **live/dangling wire** — this is URGENT!
+        Mark priority as **Urgent** and also call emergency: **1912** (electricity emergency)
+
+        👉 Go to "Report Issue" → Select "Electricity" → Describe the hazard clearly.
+
+  utter_drainage_issue_detected:
+    - text: |
+        🌊 This sounds like a **Drainage Department** issue.
+
+        Suggested details:
+        • **Category:** Drainage
+        • **Department:** Drainage & Stormwater
+
+        ⚠️ If a **manhole is open** — mark as **Urgent** immediately!
+
+        👉 Go to "Report Issue" → Select "Drainage" → Upload a photo of the blockage.
+
+  utter_emergency_contacts:
+    - text: |
+        🚨 **Emergency Helpline Numbers (India)**
+
+        🚔 Police — **100**
+        🚒 Fire Brigade — **101**
+        🚑 Ambulance — **102**
+        🆘 Disaster Management — **108**
+        🏛️ Municipal Helpline — **1916**
+        ⚡ Electricity Emergency — **1912**
+        💧 Water Emergency — **1800-425-1900**
+        📞 National Emergency — **112**
+
+        For life-threatening situations, call **112** immediately.
+        Then report the civic issue on SmartCivic once you're safe.
+
+  utter_how_it_works:
+    - text: |
+        🏙️ **How SmartCivic Works:**
+
+        1️⃣ **Citizen Reports** — You submit a complaint with photo + GPS location
+        2️⃣ **Admin Verifies** — Our team checks authenticity within 24 hours
+        3️⃣ **Smart Grouping** — Multiple reports of same issue are grouped automatically
+        4️⃣ **Department Assigned** — Correct department officer is notified
+        5️⃣ **Worker Dispatched** — Field worker goes to fix the issue
+        6️⃣ **Resolved & Notified** — You get Gmail notification when resolved
+        7️⃣ **Rate Us** — Share your satisfaction feedback
+
+        Every step is tracked. You always know what's happening! 📊
+
+  utter_resolution_time:
+    - text: |
+        ⏱️ **Expected Resolution Times:**
+
+        🛣️ Roads (potholes, repair) — 5–10 working days
+        💧 Water (leakage, supply) — 1–3 working days
+        🗑️ Sanitation (garbage) — 1–2 working days
+        ⚡ Electricity (streetlight) — 2–5 working days
+        🌊 Drainage (blockage) — 3–7 working days
+
+        ⚠️ **Urgent priority** complaints are escalated within 24 hours.
+
+        You can track real-time progress on your "My Complaints" page.
+
+  utter_departments_info:
+    - text: |
+        🏢 **Department Guide:**
+
+        🛣️ **Roads Dept** → Potholes, road damage, pavements, dividers
+        💧 **Water Dept** → Pipe leaks, no supply, water quality, borewells
+        🗑️ **Sanitation Dept** → Garbage collection, waste dumps, public toilets
+        ⚡ **Electricity Dept** → Streetlights, wires, electrical hazards, poles
+        🌊 **Drainage Dept** → Blocked drains, waterlogging, missing manholes
+
+        The platform **automatically assigns** your complaint to the correct department based on your selected category!
+
+  utter_track_complaint:
+    - text: |
+        📍 **How to Track Your Complaint:**
+
+        1. Login to SmartCivic
+        2. Click **"My Complaints"** in the sidebar
+        3. Find your complaint by ID or date
+        4. Click **"View Details"** → See the full status timeline
+
+        You'll also receive **Gmail notifications** at every stage automatically — check your inbox!
+
+        Need to check a specific complaint ID? Share it with me and I'll look it up.
+
+  utter_ask_complaint_id:
+    - text: "Please share your Complaint ID (format: CMP-YYYY-XXXX) and I'll check the status for you."
+
+  utter_complaint_not_found:
+    - text: |
+        ❌ I couldn't find a complaint with that ID.
+
+        Please double-check the ID format: **CMP-2024-0042**
+
+        You can find your complaint IDs in:
+        • Your **registration email**
+        • **My Complaints** page in your dashboard
+
+  utter_default:
+    - text: |
+        🤔 I'm not sure I understood that. I can help you with:
+        • Reporting a civic issue
+        • Checking complaint status
+        • Emergency contacts
+        • How the platform works
+
+        Try rephrasing, or click one of the options above!
+
+  utter_redirect_to_submit:
+    - text: |
+        👉 To submit your complaint now:
+        **Click "Report Issue"** in the left sidebar, or go to:
+        `/citizen/complaints/new`
+
+        Based on our conversation, select the matching category when filing. Good luck! 💪
+
+  utter_ask_issue_description:
+    - text: |
+        📝 Please describe the civic issue you want to report.
+        
+        Be specific — mention what the problem is and how it looks.
+        (Example: "Large pothole on the road causing vehicles to swerve")
+
+  utter_ask_category_confirmed:
+    - text: |
+        🔍 Based on your description, I've identified this as a:
+        
+        **{issue_category}** issue
+        
+        Is that correct? (yes / no)
+        
+        If not, tell me the correct category:
+        🛣️ Roads | 💧 Water | 🗑️ Sanitation | ⚡ Electricity | 🌊 Drainage | 📍 Other
+
+  utter_ask_issue_location_text:
+    - text: |
+        📍 Where exactly is this issue located?
+        
+        Please mention: street name, landmark, colony, or area.
+        (Example: "Near Sunshine School, MG Road, Kondapur")
+
+  utter_ask_issue_city:
+    - text: "🏙️ Which city or town is this in?"
+
+  utter_ask_issue_priority:
+    - text: |
+        ⚠️ How urgent is this issue?
+        
+        Type one of:
+        • **low** — minor inconvenience
+        • **medium** — affects daily life
+        • **high** — dangerous or widespread
+        • **urgent** — immediate safety risk
+
+  utter_ask_submission_confirmed:
+    - text: |
+        📋 **Review Your Complaint:**
+        ─────────────────────────
+        🏷️ **Category:** {issue_category}
+        📝 **Issue:** {issue_description}
+        📍 **Location:** {issue_location_text}
+        🏙️ **City:** {issue_city}
+        ⚠️ **Priority:** {issue_priority}
+        ─────────────────────────
+        
+        Shall I submit this complaint? (yes / no)
+
+  utter_complaint_cancelled:
+    - text: |
+        ❌ Complaint cancelled. No data has been submitted.
+        
+        You can start again anytime by saying "I want to report an issue"
+        or use the **Report Issue** button in the sidebar.
+
+  utter_complaint_submission_failed:
+    - text: |
+        ⚠️ Something went wrong while submitting your complaint.
+        
+        Please try again or use the **Report Issue** form in your dashboard.
+        Your issue description has been noted — don't worry.
+
+  utter_category_override_prompt:
+    - text: |
+        No problem! Please type the correct category:
+        🛣️ Roads | 💧 Water | 🗑️ Sanitation | ⚡ Electricity | 🌊 Drainage | 📍 Other
+
+  utter_ask_start_form_or_guide:
+    - text: |
+        I can help you report this issue in two ways:
+        
+        💬 **Report here in chat** — I'll ask you a few questions and submit for you
+        📝 **Use the full form** — Go to "Report Issue" in the sidebar for GPS + photo upload
+        
+        Would you like to report it here in chat? (yes / no)
+
+actions:
+  - action_check_complaint_status
+  - action_detect_category_from_text
+  - utter_greet
+  - utter_goodbye
+  - utter_thank_you
+  - utter_how_to_report
+  - utter_ask_which_category
+  - utter_road_issue_detected
+  - utter_water_issue_detected
+  - utter_sanitation_issue_detected
+  - utter_electricity_issue_detected
+  - utter_drainage_issue_detected
+  - utter_emergency_contacts
+  - utter_how_it_works
+  - utter_resolution_time
+  - utter_departments_info
+  - utter_track_complaint
+  - utter_ask_complaint_id
+  - utter_complaint_not_found
+  - utter_default
+  - utter_redirect_to_submit
+  - action_detect_and_set_category
+  - action_submit_complaint
+  - action_handle_category_override
+  - validate_complaint_form
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

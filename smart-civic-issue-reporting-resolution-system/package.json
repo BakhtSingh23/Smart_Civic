@@ -1,0 +1,17 @@
+{
+	"name": "smart-civic-issue-reporting-resolution-system",
+	"private": true,
+	"version": "1.0.0",
+	"description": "Smart civic issue reporting & resolution system (monorepo)",
+	"scripts": {
+		"install:all": "npm install && npm install --prefix server && npm install --prefix client",
+		"dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+		"start": "npm run start --prefix server"
+	},
+	"devDependencies": {
+		"concurrently": "^9.1.2"
+	},
+	"dependencies": {
+		"smart-civic-issue-reporting-resolution-system": "file:"
+	}
+}

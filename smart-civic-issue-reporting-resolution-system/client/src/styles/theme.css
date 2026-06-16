@@ -1,0 +1,112 @@
+:root {
+  --app-bg: #0b1220;
+  --app-surface: #0f1b33;
+  --app-text: #ffffff;
+  --app-muted: rgba(255, 255, 255, 0.72);
+  --app-accent: #1e88e5;
+  --app-border: rgba(255, 255, 255, 0.12);
+}
+
+body {
+  background: linear-gradient(180deg, var(--app-bg), #060a12);
+  color: var(--app-text);
+}
+
+.app-navbar {
+  background: var(--app-surface);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.app-footer {
+  background: transparent;
+  border-top: 1px solid var(--app-border);
+  color: var(--app-muted);
+}
+
+.app-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 112px);
+}
+
+.app-sidebar {
+  border-right: 1px solid var(--app-border);
+  background: rgba(15, 27, 51, 0.5);
+}
+
+.app-content {
+  color: var(--app-text);
+}
+
+.app-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+}
+
+/* Glassmorphism helper for forms/cards */
+.app-glass {
+  backdrop-filter: blur(12px);
+}
+
+.input-group-text,
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: none;
+  border-color: rgba(30, 136, 229, 0.55);
+}
+
+.app-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 1050;
+}
+
+.app-popup {
+  max-width: 520px;
+  width: 100%;
+}
+
+.app-card .text-muted {
+  color: var(--app-muted) !important;
+}
+
+.btn-primary {
+  background-color: var(--app-accent);
+  border-color: var(--app-accent);
+}
+
+.list-group-item {
+  background: transparent;
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+
+.list-group-item.active {
+  background: rgba(30, 136, 229, 0.25);
+  border-color: rgba(30, 136, 229, 0.25);
+}
+
+@media (max-width: 900px) {
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+  .app-sidebar {
+    display: none;
+  }
+}

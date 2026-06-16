@@ -1,0 +1,74 @@
+version: "3.1"
+
+rules:
+
+- rule: greet always triggers greet response
+  steps:
+    - intent: greet
+    - action: utter_greet
+
+- rule: goodbye always triggers goodbye
+  steps:
+    - intent: goodbye
+    - action: utter_goodbye
+
+- rule: thank you always responds
+  steps:
+    - intent: thank_you
+    - action: utter_thank_you
+
+- rule: emergency always gives contacts immediately
+  steps:
+    - intent: ask_emergency_contacts
+    - action: utter_emergency_contacts
+
+- rule: electricity issue always warns about live wire danger
+  steps:
+    - intent: report_electricity_issue
+    - action: utter_electricity_issue_detected
+
+- rule: drainage issue always warns about manhole danger
+  steps:
+    - intent: report_drainage_issue
+    - action: utter_drainage_issue_detected
+
+- rule: status check with ID triggers lookup action
+  condition:
+    - slot_was_set:
+        - complaint_id: true
+  steps:
+    - intent: check_complaint_status
+    - action: action_check_complaint_status
+
+- rule: fallback on unknown input
+  steps:
+    - intent: nlu_fallback
+    - action: utter_default
+
+- rule: activate complaint form on direct request
+  steps:
+    - intent: start_complaint_form
+    - action: complaint_form
+    - active_loop: complaint_form
+
+- rule: submit complaint when form completes
+  condition:
+    - active_loop: complaint_form
+  steps:
+    - action: complaint_form
+    - active_loop: null
+    - action: action_submit_complaint
+
+- rule: cancel form at any point
+  condition:
+    - active_loop: complaint_form
+  steps:
+    - intent: cancel_complaint
+    - action: action_deactivate_loop
+    - active_loop: null
+    - action: utter_complaint_cancelled
+
+- rule: handle grievance from report_complaint intent
+  steps:
+    - intent: report_complaint
+    - action: utter_ask_start_form_or_guide
