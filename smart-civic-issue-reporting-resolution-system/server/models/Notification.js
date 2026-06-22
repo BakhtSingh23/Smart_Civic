@@ -14,6 +14,7 @@ const notificationSchema = new mongoose.Schema({
 			'work_in_progress',
 			'complaint_resolved',
 			'feedback_request',
+			'automation_assigned',
 			'general',
 		],
 	},

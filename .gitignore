@@ -1,29 +1,39 @@
+# Node.js dependencies
 node_modules/
-
 **/node_modules/
 
+# Environment files
 .env
-
 **/.env
 
+# Build and cache
 dist/
-
 build/
-
 .vite/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
+# Python virtual environments
+venv/
+rasa_env/
+
+# Large binaries
+*.dll
+*.so
+*.dylib
+
+# Uploads (keep only .gitkeep)
 server/uploads/**
-
 !server/uploads/.gitkeep
 
+# Debug logs
 npm-debug.log*
-
 yarn-debug.log*
-
 yarn-error.log*
-
 pnpm-debug.log*
 
-.DS Store
-
+# OS files
+.DS_Store
 Thumbs.db

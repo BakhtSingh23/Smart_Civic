@@ -1,6 +1,8 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -22,6 +24,8 @@ require('./models/Worker');
 require('./models/Thread');
 require('./models/Reply');
 require('./models/ForecastCache');
+require('./models/AutomationReport');
+require('./models/AutomationLog');
 
 const authRoutes = require('./routes/authRoutes');
 const usersRoutes = require('./routes/usersRoutes');
@@ -37,9 +41,21 @@ const forecastRoutes = require('./routes/forecastRoutes');
 
 const app = express();
 
+app.use(helmet({
+  crossOriginResourcePolicy: false, // allow images to be served cross-origin
+}));
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api', apiLimiter);
+
 app.use(express.json({ limit: '10mb' }));
 
-const configuredOrigins = (process.env.CLIENT_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5173')
+const configuredOrigins = (process.env.CLIENT_ORIGIN || process.env.CLIENT_URL || '')
 	.split(',')
 	.map((origin) => origin.trim().replace(/\/$/, ''))
 	.filter(Boolean);
@@ -49,12 +65,12 @@ const localhostOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 app.use(
 	cors({
 		origin: (origin, callback) => {
-			if (!origin) return callback(null, true);
+			if (!origin) return callback(null, true); // Allow non-browser clients like Postman or server-to-server
 
 			const normalizedOrigin = origin.replace(/\/$/, '');
 
 			const allowedByConfig = configuredOrigins.includes(normalizedOrigin);
-			const allowedLocalhost = localhostOriginRegex.test(origin);
+			const allowedLocalhost = process.env.NODE_ENV !== 'production' && localhostOriginRegex.test(origin);
 
 			if (allowedByConfig || allowedLocalhost) {
 				return callback(null, true);

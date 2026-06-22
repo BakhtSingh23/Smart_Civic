@@ -9,12 +9,14 @@
 		"start": "node index.js"
 	},
 	"dependencies": {
+		"@google/generative-ai": "^0.21.0",
 		"axios": "^1.16.0",
 		"bcryptjs": "^3.0.2",
 		"cors": "^2.8.5",
 		"dotenv": "^16.6.1",
 		"express": "^4.21.2",
 		"express-rate-limit": "^8.5.0",
+		"helmet": "^8.2.0",
 		"jsonwebtoken": "^9.0.2",
 		"mongoose": "^8.16.5",
 		"multer": "^2.0.2",

@@ -5,6 +5,8 @@
 	"description": "Smart civic issue reporting & resolution system (monorepo)",
 	"scripts": {
 		"install:all": "npm install && npm install --prefix server && npm install --prefix client",
+		"install:server": "npm install --prefix server",
+		"build": "echo 'No build step needed for server'",
 		"dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
 		"start": "npm run start --prefix server"
 	},

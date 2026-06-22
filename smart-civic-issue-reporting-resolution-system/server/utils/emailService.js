@@ -95,7 +95,7 @@ async function sendRegistrationEmail(user) {
       <p><strong>Account Type:</strong> <span class="badge badge-blue">${capitalize(user.role)}</span></p>
     </div>
     <p>Get started by reporting your first issue — your voice matters to us.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" class="btn">Login to SmartCivic</a>
+    <a href="${process.env.CLIENT_URL}/login" class="btn">Login to SmartCivic</a>
   `);
   await sendEmail(user.email, `Welcome to SmartCivic, ${user.name}!`, html);
 }
@@ -113,7 +113,7 @@ async function sendComplaintSubmittedEmail(citizen, complaint) {
       <p><strong>Status:</strong> <span class="badge badge-amber">Pending Review</span></p>
     </div>
     <p>Our team will review your complaint within <strong>24 hours</strong>. You will receive an email once it is verified or if additional information is required.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints" class="btn">Track Your Complaint</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints" class="btn">Track Your Complaint</a>
   `);
   await sendEmail(citizen.email, `Complaint Received — ${complaint.complaintId}`, html);
 }
@@ -131,7 +131,7 @@ async function sendComplaintVerifiedEmail(citizen, complaint) {
     </div>
     <p><strong>What happens next?</strong></p>
     <p>Your complaint will be assigned to the relevant department, who will then deploy field workers to address the issue. You will be notified at every step.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints" class="btn">View Complaint Status</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints" class="btn">View Complaint Status</a>
   `);
   await sendEmail(citizen.email, `Your Complaint ${complaint.complaintId} is Verified ✅`, html);
 }
@@ -148,7 +148,7 @@ async function sendComplaintRejectedEmail(citizen, complaint, reason) {
       <p><strong>Reason:</strong> ${reason || 'Insufficient information provided.'}</p>
     </div>
     <p>You are welcome to <strong>resubmit your complaint</strong> with more details, clearer photos, or a precise location. Our team is here to help resolve genuine civic issues.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/submit" class="btn">Submit New Complaint</a>
+    <a href="${process.env.CLIENT_URL}/citizen/submit" class="btn">Submit New Complaint</a>
   `);
   await sendEmail(citizen.email, `Update on Your Complaint ${complaint.complaintId}`, html);
 }
@@ -167,7 +167,7 @@ async function sendDuplicateLinkedEmail(citizen, complaint, incidentGroup) {
     </div>
     <p>We have grouped all related complaints into one incident. This <strong>increases priority</strong> and ensures all reporters — including you — are updated simultaneously as work progresses.</p>
     <p>You will receive notifications as the incident moves through verification, assignment, and resolution.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints" class="btn">Track Incident Progress</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints" class="btn">Track Incident Progress</a>
   `);
   await sendEmail(citizen.email, `Your Complaint is Part of a Group Incident 👥`, html);
 }
@@ -184,7 +184,7 @@ async function sendDepartmentAssignedEmail(citizen, complaint, department) {
       <p><strong>Status:</strong> <span class="badge badge-amber">Assigned</span></p>
     </div>
     <p>The department will deploy a field officer and workers to your location. You will be notified when work begins.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints" class="btn">View Status</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints" class="btn">View Status</a>
   `);
   await sendEmail(citizen.email, `Action Taken — ${department} Department Assigned`, html);
 }
@@ -203,7 +203,7 @@ async function sendOfficerAssignedEmail(officer, complaint) {
       <p><strong>Submitted:</strong> ${fmt(complaint.createdAt)}</p>
     </div>
     <p>Please log in to <strong>SmartCivic</strong> to review the complaint details and assign field workers promptly.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/officer/complaints" class="btn">Open in Officer Portal</a>
+    <a href="${process.env.CLIENT_URL}/officer/complaints" class="btn">Open in Officer Portal</a>
   `);
   await sendEmail(officer.email, `New Complaint Assigned to You — ${complaint.complaintId}`, html);
 }
@@ -222,7 +222,7 @@ async function sendWorkerTaskEmail(worker, task, complaint) {
       ${task.instructions ? `<p><strong>Officer Instructions:</strong> ${task.instructions}</p>` : ''}
     </div>
     <p>Log in to SmartCivic to accept this task, view the map, upload before/after photos, and mark completion.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/worker/tasks/${task._id}" class="btn">Open Task in Portal</a>
+    <a href="${process.env.CLIENT_URL}/worker/tasks/${task._id}" class="btn">Open Task in Portal</a>
   `);
   await sendEmail(worker.email, `New Field Task Assigned — ${task.taskId}`, html);
 }
@@ -239,7 +239,7 @@ async function sendWorkStartedEmail(citizen, complaint) {
       <p><strong>Status:</strong> <span class="badge badge-blue">In Progress</span></p>
     </div>
     <p>Our team is actively working to resolve this issue. Depending on the complexity, field work typically takes <strong>1–3 business days</strong>. You will be notified once the work is verified and completed.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints" class="btn">Track Progress</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints" class="btn">Track Progress</a>
   `);
   await sendEmail(citizen.email, `Work Started on Your Complaint ⚙️`, html);
 }
@@ -256,7 +256,7 @@ async function sendComplaintResolvedEmail(citizen, complaint) {
       <p><strong>Resolved On:</strong> ${fmt(new Date())}</p>
     </div>
     <p>We hope the resolution meets your expectations. Your feedback helps us improve municipal services for everyone.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints" class="btn">View Resolution Details</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints" class="btn">View Resolution Details</a>
   `);
   await sendEmail(citizen.email, `Issue Resolved! ✅ — ${complaint.complaintId}`, html);
 }
@@ -271,11 +271,40 @@ async function sendFeedbackRequestEmail(citizen, complaint) {
       <p><strong>Resolved On:</strong> ${fmt(new Date())}</p>
     </div>
     <p>Your feedback takes less than a minute and directly helps us improve the quality and speed of our services.</p>
-    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/citizen/complaints/${complaint._id}" class="btn">⭐ Give Feedback</a>
+    <a href="${process.env.CLIENT_URL}/citizen/complaints/${complaint._id}" class="btn">⭐ Give Feedback</a>
     <hr class="divider" />
     <p style="font-size:13px;color:#94a3b8;">You received this because your issue was recently resolved. You only need to rate once per complaint.</p>
   `);
   await sendEmail(citizen.email, `How Did We Do? Rate Your Experience ⭐`, html);
+}
+
+// 12. Automated assignment notification (officer)
+async function sendAutomationAssignmentEmail(officer, complaint, priority) {
+  const priorityColors = {
+    urgent: { bg: '#fee2e2', color: '#dc2626', label: 'Critical' },
+    high: { bg: '#fef3c7', color: '#b45309', label: 'High' },
+    medium: { bg: '#dbeafe', color: '#1d4ed8', label: 'Medium' },
+    low: { bg: '#dcfce7', color: '#15803d', label: 'Low' },
+  };
+  const p = priorityColors[priority] || priorityColors.medium;
+
+  const html = baseTemplate(`
+    <h2>🤖 Automated Complaint Assignment</h2>
+    <p>Hi ${officer.name}, a complaint has been <strong>automatically assigned</strong> to you by the SmartCivic Automation Engine.</p>
+    <div class="info-card">
+      <p><strong>Complaint ID:</strong> <span class="badge badge-blue">${complaint.complaintId}</span></p>
+      <p><strong>Title:</strong> ${complaint.title}</p>
+      <p><strong>Category:</strong> ${complaint.category}</p>
+      <p><strong>Priority:</strong> <span class="badge" style="background:${p.bg};color:${p.color}">${p.label}</span></p>
+      <p><strong>Location:</strong> ${complaint.location?.address || 'See portal for details'}</p>
+      <p><strong>Assignment Time:</strong> ${fmt(new Date())}</p>
+      <p><strong>Submitted:</strong> ${fmt(complaint.createdAt)}</p>
+    </div>
+    <p>This assignment was made automatically based on <strong>workload balancing</strong> — you currently have the lightest caseload in your department.</p>
+    <p>Please log in to <strong>SmartCivic</strong> to review the complaint and assign field workers.</p>
+    <a href="${process.env.CLIENT_URL}/officer/complaints" class="btn">Open in Officer Portal</a>
+  `);
+  await sendEmail(officer.email, `🤖 Automated Assignment — ${complaint.complaintId}`, html);
 }
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
@@ -291,4 +320,5 @@ module.exports = {
   sendWorkStartedEmail,
   sendComplaintResolvedEmail,
   sendFeedbackRequestEmail,
+  sendAutomationAssignmentEmail,
 };

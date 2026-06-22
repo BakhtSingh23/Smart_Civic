@@ -29,7 +29,6 @@
 		"react-router-dom": "^6.30.1",
 		"react-toastify": "^11.0.5",
 		"recharts": "^3.8.1",
-		"smart-civic-issue-reporting-resolution-system": "file:..",
 		"three": "^0.184.0"
 	},
 	"devDependencies": {

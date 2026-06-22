@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { http } from '../../api/http';
+import { http, getStaticUrl } from '../../api/http';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -11,7 +11,6 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { FiArrowLeft, FiNavigation, FiMapPin } from 'react-icons/fi';
 import ImageUploadZone from '../../components/worker/ImageUploadZone';
-import axios from 'axios';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow });
@@ -47,9 +46,8 @@ export default function TaskDetail() {
   useEffect(() => { fetchTask(); }, [id]);
 
   const doMultipartPatch = async (url, formData) => {
-    const token = localStorage.getItem('token');
-    return axios.patch(`http://localhost:5000/api${url}`, formData, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+    return http.patch(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: e => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
     });
   };
@@ -172,7 +170,7 @@ export default function TaskDetail() {
           <h3 className="font-semibold text-slate-700 text-sm">Before Photos</h3>
           <div className="grid grid-cols-3 gap-2">
             {task.beforeImages.map((img, i) => (
-              <img key={i} src={`http://localhost:5000${img}`} alt="before" className="w-full h-24 object-cover rounded-lg border border-slate-200" />
+              <img key={i} src={getStaticUrl(img)} alt="before" className="w-full h-24 object-cover rounded-lg border border-slate-200" />
             ))}
           </div>
         </div>
@@ -184,7 +182,7 @@ export default function TaskDetail() {
           <h3 className="font-semibold text-slate-700 text-sm">After Photos</h3>
           <div className="grid grid-cols-3 gap-2">
             {task.afterImages.map((img, i) => (
-              <img key={i} src={`http://localhost:5000${img}`} alt="after" className="w-full h-24 object-cover rounded-lg border border-slate-200" />
+              <img key={i} src={getStaticUrl(img)} alt="after" className="w-full h-24 object-cover rounded-lg border border-slate-200" />
             ))}
           </div>
           {task.completionNote && (

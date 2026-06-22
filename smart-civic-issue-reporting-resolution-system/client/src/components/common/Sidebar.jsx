@@ -24,6 +24,7 @@ import {
   FaTimes,
   FaComments,
   FaBrain,
+  FaRobot,
 } from 'react-icons/fa';
 
 const linksByRole = {
@@ -43,6 +44,9 @@ const linksByRole = {
     { to: '/admin/staff', label: 'Officers & Workers', icon: <FaUsers /> },
     { to: '/admin/analytics', label: 'Analytics', icon: <FaChartBar /> },
     { to: '/admin/forecasting', label: 'AI Forecasting', icon: <FaBrain /> },
+    { to: '/admin/automation-reports', label: 'Automation', icon: <FaRobot /> },
+    { to: '/admin/workload', label: 'Workload', icon: <FaTasks /> },
+    { to: '/admin/automation-logs', label: 'Audit Logs', icon: <FaList /> },
     { to: '/admin/community', label: 'Community', icon: <FaComments /> },
   ],
   officer: [

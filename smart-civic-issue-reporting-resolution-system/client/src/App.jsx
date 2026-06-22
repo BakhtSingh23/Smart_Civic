@@ -26,6 +26,9 @@ import AllComplaints from './pages/admin/AllComplaints.jsx';
 import StaffManagement from './pages/admin/StaffManagement.jsx';
 import Analytics from './pages/admin/Analytics.jsx';
 import Forecasting from './pages/admin/Forecasting.jsx';
+import AutomationReports from './pages/admin/AutomationReports.jsx';
+import AutomationLogs from './pages/admin/AutomationLogs.jsx';
+import WorkloadDashboard from './pages/admin/WorkloadDashboard.jsx';
 import OfficerDashboard from './pages/officer/OfficerDashboard.jsx';
 import AssignedComplaints from './pages/officer/AssignedComplaints.jsx';
 import OfficerComplaintDetail from './pages/officer/OfficerComplaintDetail.jsx';
@@ -79,6 +82,9 @@ export default function App() {
 							<Route path="staff" element={<StaffManagement />} />
 							<Route path="analytics" element={<Analytics />} />
 							<Route path="forecasting" element={<Forecasting />} />
+							<Route path="automation-reports" element={<AutomationReports />} />
+							<Route path="automation-logs" element={<AutomationLogs />} />
+							<Route path="workload" element={<WorkloadDashboard />} />
 							<Route path="community" element={<CommunityManagement />} />
 							<Route path="*" element={<Navigate to="dashboard" replace />} />
 						</Route>

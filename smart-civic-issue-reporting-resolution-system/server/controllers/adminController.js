@@ -3,6 +3,10 @@ const User = require('../models/User');
 const IncidentGroup = require('../models/IncidentGroup');
 const WorkerTask = require('../models/WorkerTask');
 const Notification = require('../models/Notification');
+const AutomationReport = require('../models/AutomationReport');
+const AutomationLog = require('../models/AutomationLog');
+const { automateComplaints: runAutomation } = require('../services/automationService');
+const { getWorkloadSummary: fetchWorkloadSummary } = require('../services/loadBalancingService');
 const {
   sendComplaintVerifiedEmail,
   sendComplaintRejectedEmail,
@@ -999,6 +1003,235 @@ exports.generateTrainingData = async (req, res) => {
     });
   } catch (error) {
     console.error('generateTrainingData error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTOMATION ENGINE ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// POST /api/admin/automate-complaints
+// Triggers automated processing of all verified unassigned complaints from today.
+exports.automateComplaintsHandler = async (req, res) => {
+  try {
+    const result = await runAutomation(req.user._id);
+
+    res.json({
+      success: true,
+      message: `Automation complete. ${result.totalAssigned} complaints assigned out of ${result.totalReceived} eligible.`,
+      data: {
+        totalReceived: result.totalReceived,
+        totalProcessed: result.totalProcessed,
+        totalAssigned: result.totalAssigned,
+        totalFailed: result.totalFailed,
+        totalPending: result.totalPending,
+        totalDuplicates: result.totalDuplicates,
+        departmentSummary: result.departmentSummary,
+        prioritySummary: result.prioritySummary,
+        authorityAssignments: result.authorityAssignments,
+        assignments: result.assignments,
+        errors: result.errors,
+        reportId: result.reportId,
+        duration: result.duration,
+      },
+    });
+  } catch (error) {
+    console.error('automateComplaints error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/admin/automation-reports
+// Paginated list of automation reports.
+exports.getAutomationReports = async (req, res) => {
+  try {
+    const { page = 1, limit = 15, dateFrom, dateTo } = req.query;
+    const filter = {};
+
+    if (dateFrom || dateTo) {
+      filter.date = {};
+      if (dateFrom) filter.date.$gte = new Date(dateFrom);
+      if (dateTo) filter.date.$lte = new Date(dateTo);
+    }
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const [reports, total] = await Promise.all([
+      AutomationReport.find(filter)
+        .populate('executedBy', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize),
+      AutomationReport.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        reports,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+        currentPage: pageNumber,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/admin/automation-reports/:id
+// Single report detail.
+exports.getAutomationReportById = async (req, res) => {
+  try {
+    const report = await AutomationReport.findById(req.params.id)
+      .populate('executedBy', 'name email');
+
+    if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
+
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/admin/automation-logs
+// Paginated list of automation execution logs.
+exports.getAutomationLogs = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, dateFrom, dateTo } = req.query;
+    const filter = {};
+
+    if (dateFrom || dateTo) {
+      filter.executionTime = {};
+      if (dateFrom) filter.executionTime.$gte = new Date(dateFrom);
+      if (dateTo) filter.executionTime.$lte = new Date(dateTo);
+    }
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const [logs, total] = await Promise.all([
+      AutomationLog.find(filter)
+        .populate('executedBy', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize),
+      AutomationLog.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        logs,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+        currentPage: pageNumber,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/admin/workload-summary
+// Department-wise officer workload overview.
+exports.getWorkloadSummaryHandler = async (req, res) => {
+  try {
+    const summary = await fetchWorkloadSummary();
+
+    // Also get today's automation stats
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const todaysComplaints = await Complaint.countDocuments({
+      createdAt: { $gte: startOfDay },
+    });
+    const autoAssignedToday = await Complaint.countDocuments({
+      automatedAssignment: true,
+      automatedAssignmentAt: { $gte: startOfDay },
+    });
+    const pendingAssignment = await Complaint.countDocuments({
+      status: 'verified',
+      assignedOfficer: null,
+    });
+    const criticalComplaints = await Complaint.countDocuments({
+      priority: 'urgent',
+      status: { $nin: ['completed', 'closed', 'rejected'] },
+    });
+    const availableAuthorities = await User.countDocuments({
+      role: 'officer',
+      isActive: true,
+      isAvailable: true,
+      isOnLeave: { $ne: true },
+      availabilityStatus: { $in: ['active', 'busy'] },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        departments: summary,
+        todaysComplaints,
+        autoAssignedToday,
+        pendingAssignment,
+        criticalComplaints,
+        availableAuthorities,
+      },
+    });
+  } catch (error) {
+    console.error('getWorkloadSummary error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// PATCH /api/admin/officers/:id/availability
+// Update an officer's availability status.
+exports.updateOfficerAvailability = async (req, res) => {
+  try {
+    const { availabilityStatus } = req.body;
+    const validStatuses = ['active', 'busy', 'on_leave', 'inactive'];
+
+    if (!validStatuses.includes(availabilityStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    const officer = await User.findById(req.params.id);
+    if (!officer || officer.role !== 'officer') {
+      return res.status(404).json({ success: false, message: 'Officer not found' });
+    }
+
+    // Update all related fields based on status
+    officer.availabilityStatus = availabilityStatus;
+    officer.isOnLeave = availabilityStatus === 'on_leave';
+    officer.isAvailable = ['active', 'busy'].includes(availabilityStatus);
+    if (availabilityStatus === 'inactive') {
+      officer.isActive = false;
+    } else {
+      officer.isActive = true;
+    }
+
+    await officer.save();
+
+    res.json({
+      success: true,
+      message: `Officer availability updated to: ${availabilityStatus}`,
+      data: {
+        _id: officer._id,
+        name: officer.name,
+        department: officer.department,
+        availabilityStatus: officer.availabilityStatus,
+        isAvailable: officer.isAvailable,
+        isOnLeave: officer.isOnLeave,
+        isActive: officer.isActive,
+      },
+    });
+  } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -41,6 +41,9 @@ const complaintSchema = new mongoose.Schema({
 	priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
 	incidentGroup: { type: mongoose.Schema.Types.ObjectId, ref: 'IncidentGroup', default: null },
 	isDuplicate: { type: Boolean, default: false },
+	originalComplaintId: { type: mongoose.Schema.Types.ObjectId, ref: 'Complaint', default: null },
+	automatedAssignment: { type: Boolean, default: false },
+	automatedAssignmentAt: { type: Date, default: null },
 	assignedDepartment: String,
 	assignedOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 	adminNote: String,
@@ -51,6 +54,9 @@ const complaintSchema = new mongoose.Schema({
 });
 
 complaintSchema.index({ location: '2dsphere' });
+complaintSchema.index({ status: 1 });
+complaintSchema.index({ citizen: 1 });
+complaintSchema.index({ assignedOfficer: 1 });
 
 complaintSchema.pre('save', async function (next) {
 	if (this.complaintId) return next();

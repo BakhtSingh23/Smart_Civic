@@ -31,4 +31,12 @@ router.post('/incidents/:id/unmerge', adminController.unmergeComplaint);
 router.get('/incidents', adminController.getIncidentGroups);
 router.get('/incidents/:id', adminController.getIncidentGroupDetail);
 
+// Smart Complaint Automation & Resource Allocation Engine
+router.post('/automate-complaints', adminController.automateComplaintsHandler);
+router.get('/automation-reports', adminController.getAutomationReports);
+router.get('/automation-reports/:id', adminController.getAutomationReportById);
+router.get('/automation-logs', adminController.getAutomationLogs);
+router.get('/workload-summary', adminController.getWorkloadSummaryHandler);
+router.patch('/officers/:id/availability', adminController.updateOfficerAvailability);
+
 module.exports = router;

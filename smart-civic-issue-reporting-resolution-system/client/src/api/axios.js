@@ -6,6 +6,13 @@ const axiosInstance = axios.create({
   baseURL,
 });
 
+export const getStaticUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const rootUrl = baseURL.replace(/\/api\/?$/, '');
+  return `${rootUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {

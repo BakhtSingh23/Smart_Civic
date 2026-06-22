@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../../api/axios';
+import { default as axios, getStaticUrl } from '../../api/axios';
 import { useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -129,9 +129,9 @@ export default function ComplaintDetail() {
             {complaint.media.map((m) => (
               <div key={m} className="rounded overflow-hidden border border-gray-200 bg-gray-50">
                 {m.endsWith('.mp4') || m.endsWith('.mov') ? (
-                  <video controls className="w-full h-40 object-cover" src={`/${m}`} />
+                  <video controls className="w-full h-40 object-cover" src={getStaticUrl(m)} />
                 ) : (
-                  <img src={`/${m}`} alt="complaint media" className="w-full h-40 object-cover" />
+                  <img src={getStaticUrl(m)} alt="complaint media" className="w-full h-40 object-cover" />
                 )}
               </div>
             ))}
@@ -175,7 +175,7 @@ export default function ComplaintDetail() {
           <div className="text-sm text-gray-700">{complaint.adminNote || 'No resolution note provided.'}</div>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(complaint.afterImages || []).map((img) => (
-              <img key={img} src={`/${img}`} className="w-full h-24 object-cover rounded" />
+              <img key={img} src={getStaticUrl(img)} className="w-full h-24 object-cover rounded" />
             ))}
           </div>
         </section>

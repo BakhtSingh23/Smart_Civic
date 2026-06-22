@@ -8,7 +8,6 @@ import {
   FiNavigation, FiPlayCircle, FiSend, FiArrowRight
 } from 'react-icons/fi';
 import ImageUploadZone from '../../components/worker/ImageUploadZone';
-import axios from 'axios';
 
 const CATEGORY_COLOR = {
   Roads: 'bg-amber-100 text-amber-700',
@@ -46,12 +45,11 @@ export default function WorkerDashboard() {
     try {
       const formData = new FormData();
       beforeFiles.forEach(f => formData.append('beforeImages', f));
-      const token = localStorage.getItem('token');
-      const res = await axios.patch(
-        `http://localhost:5000/api/worker/tasks/${taskId}/start`,
+      const res = await http.patch(
+        `/worker/tasks/${taskId}/start`,
         formData,
         {
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+          headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: e => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
         }
       );
@@ -76,12 +74,11 @@ export default function WorkerDashboard() {
       const formData = new FormData();
       afterFiles.forEach(f => formData.append('afterImages', f));
       if (completionNote) formData.append('completionNote', completionNote);
-      const token = localStorage.getItem('token');
-      const res = await axios.patch(
-        `http://localhost:5000/api/worker/tasks/${taskId}/complete`,
+      const res = await http.patch(
+        `/worker/tasks/${taskId}/complete`,
         formData,
         {
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+          headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: e => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
         }
       );

@@ -18,6 +18,8 @@ export default function ChatbotWidget() {
 	const [showQuickActions, setShowQuickActions] = useState(true);
 	const [isFormActive, setIsFormActive] = useState(false);
 	const [formStep, setFormStep] = useState(0);
+	const [gpsLoading, setGpsLoading] = useState(false);
+	const [gpsError, setGpsError] = useState('');
 	const messagesEndRef = useRef(null);
 
 	// Auto-scroll to latest message
@@ -34,7 +36,7 @@ export default function ChatbotWidget() {
 
 		if (content.includes('Please describe the civic issue')) { setIsFormActive(true); setFormStep(1); }
 		else if (content.includes("I've detected this as")) { setFormStep(2); }
-		else if (content.includes('Where exactly is this issue')) { setFormStep(3); }
+		else if (content.includes('Where exactly is this issue') || content.includes('exactly is this issue located')) { setFormStep(3); setGpsError(''); }
 		else if (content.includes('Which city or town')) { setFormStep(4); }
 		else if (content.includes('How urgent is this')) { setFormStep(5); }
 		else if (content.includes('Review Your Complaint')) { setFormStep(6); }
@@ -64,6 +66,7 @@ export default function ChatbotWidget() {
 		setInputText('');
 		setIsLoading(true);
 		setShowQuickActions(false);
+		setGpsError('');
 
 		try {
 			const { data } = await http.post('/chatbot/chat', {
@@ -90,6 +93,68 @@ export default function ChatbotWidget() {
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	// ── GPS Location Handler ──────────────────────────────────────────────────
+	const handleUseGPS = () => {
+		if (!navigator.geolocation) {
+			setGpsError('❌ GPS is not supported by your browser.');
+			return;
+		}
+
+		setGpsLoading(true);
+		setGpsError('');
+
+		navigator.geolocation.getCurrentPosition(
+			async (position) => {
+				const { latitude, longitude, accuracy } = position.coords;
+				try {
+					// Reverse geocode using OpenStreetMap Nominatim (free, no API key)
+					const res = await fetch(
+						`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+						{ headers: { 'Accept-Language': 'en' } }
+					);
+					const geo = await res.json();
+
+					// Build a readable address from the response parts
+					const addr = geo.address || {};
+					const parts = [
+						addr.road || addr.pedestrian || addr.footway || addr.street,
+						addr.neighbourhood || addr.suburb || addr.quarter || addr.village,
+						addr.city_district || addr.county,
+					].filter(Boolean);
+
+					const locationText = parts.length > 0
+						? parts.join(', ')
+						: geo.display_name?.split(',').slice(0, 3).join(', ') || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+
+					const city = addr.city || addr.town || addr.village || addr.county || 'Unknown';
+					const accuracyNote = accuracy < 50 ? '' : ` (±${Math.round(accuracy)}m)`;
+
+					// Send location as the user's message automatically
+					sendMessage(`${locationText}${accuracyNote}`);
+
+					// Pre-fill city for the next step
+					setInputText(city);
+
+				} catch {
+					// Fallback: send raw coordinates if reverse geocoding fails
+					sendMessage(`GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+				} finally {
+					setGpsLoading(false);
+				}
+			},
+			(err) => {
+				setGpsLoading(false);
+				const messages = {
+					1: '❌ Location access denied. Please type your location manually or allow GPS in browser settings.',
+					2: '❌ GPS signal unavailable. Please type your location.',
+					3: '❌ GPS request timed out. Please type your location.',
+				};
+				setGpsError(messages[err.code] || '❌ Could not get GPS location.');
+			},
+			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+		);
 	};
 
 	const formatTime = (date) =>
@@ -191,6 +256,48 @@ export default function ChatbotWidget() {
 							</div>
 						)}
 
+						{/* GPS button — shown only at location step (step 3) */}
+						{formStep === 3 && !isLoading && (
+							<div className="flex justify-start">
+								<div className="max-w-[90%] w-full">
+									<button
+										onClick={handleUseGPS}
+										disabled={gpsLoading}
+										className="w-full flex items-center justify-center gap-2
+											bg-gradient-to-r from-emerald-600 to-teal-600
+											hover:from-emerald-500 hover:to-teal-500
+											disabled:opacity-50 disabled:cursor-not-allowed
+											text-white text-sm font-semibold
+											rounded-xl px-4 py-2.5
+											shadow-md shadow-emerald-900/30
+											transition-all duration-200 hover:shadow-emerald-700/40 hover:scale-[1.02]"
+									>
+										{gpsLoading ? (
+											<>
+												<span className="flex gap-1">
+													<span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+													<span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+													<span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+												</span>
+												Fetching location...
+											</>
+										) : (
+											<>
+												<span className="text-base">📍</span>
+												Use GPS — Get My Exact Location
+											</>
+										)}
+									</button>
+									{gpsError && (
+										<p className="mt-2 text-xs text-rose-400 px-1">{gpsError}</p>
+									)}
+									<p className="mt-1.5 text-xs text-slate-500 px-1 text-center">
+										or type your location below
+									</p>
+								</div>
+							</div>
+						)}
+
 						{/* Loading dots */}
 						{isLoading && (
 							<div className="flex justify-start">
@@ -227,7 +334,7 @@ export default function ChatbotWidget() {
 									sendMessage(inputText);
 								}
 							}}
-							placeholder="Type your message..."
+							placeholder={formStep === 3 ? 'Or type location manually...' : 'Type your message...'}
 							maxLength={300}
 							className="flex-1 bg-slate-800 text-slate-100 placeholder-slate-500
                 border border-slate-700 rounded-xl px-3 py-2
