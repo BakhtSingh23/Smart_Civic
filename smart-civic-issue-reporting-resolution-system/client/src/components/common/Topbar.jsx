@@ -1,15 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaUserCircle, FaChevronDown, FaKey } from 'react-icons/fa';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import {
+  FaBell,
+  FaSignOutAlt,
+  FaUserCircle,
+  FaChevronDown,
+  FaKey,
+  FaSearch,
+  FaQuestionCircle,
+  FaCog,
+  FaMoon,
+  FaSun
+} from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { http } from '../../api/http';
 
 const roleColors = {
-  citizen: 'bg-emerald-500/20 text-emerald-300',
-  admin: 'bg-rose-500/20 text-rose-300',
-  officer: 'bg-amber-500/20 text-amber-300',
-  worker: 'bg-sky-500/20 text-sky-300',
+  citizen: { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80', label: 'Citizen' },
+  admin: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', label: 'Admin' },
+  officer: { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', label: 'Officer' },
+  worker: { bg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', label: 'Worker' },
 };
 
 const rolePaths = {
@@ -19,18 +30,30 @@ const rolePaths = {
   worker: '/worker',
 };
 
+const customTitles = {
+  admin: 'Admin Command',
+  citizen: 'Citizen Portal',
+  officer: 'Officer Console',
+  worker: 'Field Worker'
+};
+
 export default function Topbar({ title }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
   const role = user?.role?.toLowerCase() || 'guest';
   const basePath = rolePaths[role] || '';
+  const roleStyle = roleColors[role] || { bg: 'rgba(255,255,255,0.1)', text: '#94a3b8', label: role };
+
+  const topbarTitle = customTitles[role] || title || 'Portal';
 
   useEffect(() => {
+    // Notifications count
     http
       .get('/notifications/unread-count')
       .then(({ data }) => {
@@ -47,7 +70,9 @@ export default function Topbar({ title }) {
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   function onLogout() {
@@ -55,91 +80,74 @@ export default function Topbar({ title }) {
     navigate('/login');
   }
 
+  const firstName = user?.name?.split(' ')[0] || 'User';
+
   return (
-    <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A] px-6 py-4 text-white">
-      <div className="pl-10 lg:pl-0 flex items-center gap-3">
-        <img src="/assets/logo.png" alt="Smart Civic Logo" className="w-10 h-10 object-contain" />
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-white/50">SmartCivic</p>
-          <h1 className="text-lg font-display font-semibold">{title}</h1>
+    <header className="flex items-center justify-between px-6 h-[72px] bg-[#0B1120] text-white border-b border-white/5 relative z-30">
+      {/* ─── Left: Logo + Title ────────────────────────────────── */}
+      <div className="flex items-center gap-4">
+        <img src="/assets/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+        <div className="flex flex-col justify-center">
+          <span className="text-[10px] font-bold text-white/50 tracking-[0.2em] uppercase leading-tight mb-0.5">SMARTCIVIC</span>
+          <h1 className="text-lg font-bold text-white truncate leading-tight">
+            {topbarTitle}
+          </h1>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Role badge */}
-        <span
-          className={`hidden rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide sm:inline ${
-            roleColors[role] || 'bg-white/10 text-white/80'
-          }`}
-        >
-          {role}
-        </span>
+      {/* ─── Right: Actions ────────────────────────────────────── */}
+      <div className="flex items-center gap-4">
+        {/* Role Badge */}
+        <div className="hidden sm:flex items-center">
+          <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style={{ backgroundColor: roleStyle.bg, color: roleStyle.text }}>
+            {roleStyle.label}
+          </span>
+        </div>
 
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="rounded-full bg-white/10 p-2 text-white/70 hover:text-white transition-colors"
-          title="Toggle Light/Dark Mode"
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all"
+          aria-label="Toggle theme"
+          type="button"
         >
-          {theme === 'light' ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-          )}
+          {theme === 'dark' ? <FaSun size={14} /> : <FaMoon size={14} />}
         </button>
 
-        {/* Notification bell */}
+        {/* Notification Bell */}
         <Link
           to={`${basePath}/notifications`}
-          className="relative rounded-full bg-white/10 p-2 text-white/70 hover:text-white"
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all relative"
+          aria-label="Notifications"
         >
-          <FaBell />
+          <FaBell size={14} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+            <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white px-1">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Link>
 
-        {/* Avatar dropdown */}
+        {/* User Dropdown */}
         <div className="relative" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={() => setDropdownOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-white/80 hover:text-white"
+          <button 
+            type="button" 
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/5"
           >
-            <FaUserCircle className="text-lg" />
-            <span className="hidden sm:inline">{user?.name?.split(' ')[0] || 'User'}</span>
-            <FaChevronDown className="text-xs" />
+            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-white/10 overflow-hidden">
+               <FaUserCircle className="w-full h-full text-white/70" />
+            </div>
+            <span className="text-[13px] font-medium text-white max-w-[100px] truncate hidden sm:block">{firstName}</span>
+            <FaChevronDown className={`text-[10px] text-white/50 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
           </button>
-
+          
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-xl border border-white/10 bg-slateink-800 py-1 shadow-lg z-50">
-              <Link
-                to={`${basePath}/profile`}
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white"
-              >
-                <FaUserCircle />
-                Profile
-              </Link>
-              <Link
-                to={`${basePath}/change-password`}
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white"
-              >
-                <FaKey />
-                Change Password
-              </Link>
-              <hr className="my-1 border-white/10" />
-              <button
-                type="button"
-                onClick={onLogout}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-400 hover:bg-white/10"
-              >
-                <FaSignOutAlt />
-                Logout
-              </button>
+            <div className="absolute top-full right-0 mt-2 w-48 bg-[#1E293B] border border-white/10 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <Link to={`${basePath}/profile`} className="block px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setDropdownOpen(false)}>Profile</Link>
+              <Link to={`${basePath}/settings`} className="block px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setDropdownOpen(false)}>Settings</Link>
+              <div className="h-px bg-white/10 my-1"></div>
+              <button onClick={onLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors">Logout</button>
             </div>
           )}
         </div>
@@ -147,3 +155,4 @@ export default function Topbar({ title }) {
     </header>
   );
 }
+
