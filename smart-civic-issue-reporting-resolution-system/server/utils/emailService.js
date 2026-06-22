@@ -15,8 +15,9 @@ const EMAIL_PASS = process.env.EMAIL_PASS;
 if (EMAIL_USER && EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT || '465', 10),
-    secure: (process.env.EMAIL_SECURE ?? 'true') === 'true', // true for 465, false for 587
+    port: parseInt(process.env.EMAIL_PORT || '587', 10),
+    secure: (process.env.EMAIL_SECURE ?? 'false') === 'true', // true for 465, false for 587
+    requireTLS: true,
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
