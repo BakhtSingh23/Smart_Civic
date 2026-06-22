@@ -3,28 +3,69 @@
 const nodemailer = require('nodemailer');
 
 // ─── Transporter ────────────────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Use explicit SMTP settings instead of the 'service' shorthand.
+// Gmail's shorthand works locally but production servers get flagged by Google
+// because of unfamiliar IPs and stricter security policies.
 
-// ─── Core send ───────────────────────────────────────────────────────────────
-async function sendEmail(to, subject, html) {
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'SmartCivic <no-reply@smartcivic.com>',
-      to,
-      subject,
-      html,
-    });
-    console.log(`[EMAIL] ✅ Sent "${subject}" to ${to} — ID: ${info.messageId}`);
-  } catch (err) {
-    console.error(`[EMAIL] ❌ Failed to send "${subject}" to ${to}:`, err.message);
-    // Never throw — email failure must not break API
+let transporter = null;
+
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+
+if (EMAIL_USER && EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT || '465', 10),
+    secure: (process.env.EMAIL_SECURE ?? 'true') === 'true', // true for 465, false for 587
+    auth: {
+      user: EMAIL_USER,
+      pass: EMAIL_PASS,
+    },
+    tls: {
+      // Some cloud providers (Render, Railway) use proxies that can cause
+      // certificate verification failures — allow self-signed in production.
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000,  // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+
+  // Verify SMTP connection on startup (non-blocking — never prevents server start)
+  transporter.verify()
+    .then(() => console.log('[EMAIL] ✅ SMTP connection verified successfully'))
+    .catch((err) => console.warn('[EMAIL] ⚠️  SMTP verification failed — emails may not send:', err.message));
+} else {
+  console.warn('[EMAIL] ⚠️  EMAIL_USER or EMAIL_PASS not set — email sending is disabled');
+}
+
+// ─── Core send (with retry) ─────────────────────────────────────────────────
+async function sendEmail(to, subject, html, retries = 1) {
+  if (!transporter) {
+    console.warn(`[EMAIL] ⏭️  Skipped "${subject}" to ${to} — no transporter configured`);
+    return;
   }
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.EMAIL_FROM || 'SmartCivic <no-reply@smartcivic.com>',
+        to,
+        subject,
+        html,
+      });
+      console.log(`[EMAIL] ✅ Sent "${subject}" to ${to} — ID: ${info.messageId}`);
+      return; // Success — exit
+    } catch (err) {
+      console.error(`[EMAIL] ❌ Attempt ${attempt + 1}/${retries + 1} failed for "${subject}" to ${to}:`, err.message);
+
+      if (attempt < retries) {
+        // Wait before retry
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+  }
+  // All retries exhausted — log but never throw (email failure must not break API)
 }
 
 // ─── Base Template ───────────────────────────────────────────────────────────
